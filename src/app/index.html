@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Brain Tumor MRI Detection</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: #f9f9f9;
+        }
+        .container {
+            max-width: 800px;
+            margin-top: 50px;
+        }
+        .spinner {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+        }
+        img {
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            margin-top: 10px;
+        }
+        optgroup {
+            font-style: normal;
+            font-weight: 500;
+            padding: 8px 0;
+            border-top: 1px solid #dee2e6;
+        }
+        optgroup[label] {
+            color: #6c757d;
+            font-size: 0.9em;
+        }
+        optgroup option {
+            font-weight: normal;
+            padding-left: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2 class="text-center mb-4">🧠 Brain Tumor MRI Detection</h2>
+
+    <form method="POST" enctype="multipart/form-data" onsubmit="showSpinner()">
+        <!-- Select Model First -->
+        <div class="mb-3">
+            <label class="form-label">Select Model</label>
+            <select name="model" class="form-select" required onchange="toggleGroundTruth()">
+                <optgroup label="─── Classification Models ───">
+                    <option value="resnet">ResNet50 Classification</option>
+                    <option value="vit">Hybrid ViT Classification</option>
+                </optgroup>
+                <optgroup label="─── Segmentation Models ───">
+                    <option value="unet">3D UNet Segmentation</option>
+                    <option value="attention">Attention 3D UNet Segmentation</option>
+                </optgroup>
+            </select>
+        </div>
+
+        <!-- Upload MRI File -->
+        <div class="mb-3">
+            <label class="form-label">Upload MRI File</label>
+            <input type="file" class="form-control" name="file" required onchange="enableGroundTruth()">
+        </div>
+
+        <!-- Ground Truth Mask (Initially hidden) -->
+        <div class="mb-3" id="groundTruthContainer" style="display:none;">
+            <label class="form-label">Upload Ground Truth Mask (Optional for Dice/IoU)</label>
+            <input type="file" class="form-control" name="ground_truth">
+        </div>
+
+        <div class="d-grid">
+            <button type="submit" class="btn btn-primary">🔍 Predict</button>
+        </div>
+
+        <div class="spinner" id="spinner">
+            <div class="spinner-border text-primary mt-3" role="status"></div>
+            <p>Processing... Please wait</p>
+        </div>
+    </form>
+
+    {% if prediction_label and prediction_label.lower().startswith('dataset type error') %}
+    <div class="alert alert-danger text-center mt-4">
+        <h4>{{ prediction_label }}</h4>
+        {% if prediction_details %}
+        <ul class="mt-2">
+            {% for key, value in prediction_details.items() %}
+            <li><strong>{{ key }}:</strong> {{ value }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% if prediction_label and not prediction_label.lower().startswith('dataset type error') %}
+    <div class="alert alert-info text-center mt-4">
+        <strong>Prediction:</strong> {{ prediction_label }} <br>
+        {% if prediction_accuracy %}
+        <strong>Confidence:</strong> {{ prediction_accuracy }}% <br>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% if input_image or result_image %}
+    <div class="row mt-4">
+        {% if input_image %}
+        <div class="col-md-6 text-center">
+            <h5>Input MRI Slice</h5>
+            <img src="{{ url_for('static', filename='results/' + input_image) }}" class="img-fluid">
+        </div>
+        {% endif %}
+
+        {% if result_image %}
+        <div class="col-md-6 text-center">
+            <h5>Segmentation Result</h5>
+            <img src="{{ url_for('static', filename='results/' + result_image) }}" class="img-fluid">
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+</div>
+
+<script>
+    function showSpinner() {
+        document.getElementById("spinner").style.display = "block";
+    }
+
+    // Enable Ground Truth input after MRI file is selected
+    function enableGroundTruth() {
+        const fileInput = document.querySelector("input[name='file']");
+        const groundTruthContainer = document.getElementById("groundTruthContainer");
+
+        // Enable Ground Truth input field only after MRI scan file is selected
+        if (fileInput.files.length > 0) {
+            groundTruthContainer.style.display = "block";
+        } else {
+            groundTruthContainer.style.display = "none";
+        }
+    }
+
+    // Toggle the display of the Ground Truth input based on model selection
+    function toggleGroundTruth() {
+        const model = document.querySelector("select[name='model']").value;
+        const groundTruthContainer = document.getElementById("groundTruthContainer");
+
+        // Show Ground Truth input only if 3D UNet or Attention 3D UNet is selected
+        if (model === "unet" || model === "attention") {
+            groundTruthContainer.style.display = "block";
+        } else {
+            groundTruthContainer.style.display = "none";
+        }
+    }
+</script>
+
+</body>
+</html>
