@@ -31,8 +31,8 @@ This project is designed to:
 
 ## 🧾 Datasets
 
-- **Classification Dataset**: 7000+ MRI scans from [Kaggle]([https://www.kaggle.com](https://www.kaggle.com/datasets/masoudnickparvar/brain-tumor-mri-dataset))
-- **Segmentation Dataset**: BraTS 2020 Dataset from [Kaggle](https://www.kaggle.com/datasets/awsaf49/brats20-dataset-training-validation)
+- **Classification Dataset**: 7000+ MRI scans from [`Kaggle`](https://www.kaggle.com/datasets/masoudnickparvar/brain-tumor-mri-dataset).
+- **Segmentation Dataset**: [`BraTS 2020`](https://www.kaggle.com/datasets/awsaf49/brats20-dataset-training-validation) Dataset from Kaggle.
 
 ## 🛠️ Tech Stack
 
