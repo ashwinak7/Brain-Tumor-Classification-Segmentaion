@@ -8,7 +8,7 @@ You can download the pre-trained ResNet50 model from the following link:
 You can download the pre-trained Hybrid ViT-CNN model from the following link:
 [`Hybrid ViT-CNN Model`](https://drive.google.com/file/d/1ficc9Vb1nna6HxmUKgV3nqW-JlezdOYj/view?usp=sharing)
 
-## Model 3: 3D U-Net
+## Model 3: Standard 3D U-Net
 You can download the pre-trained Standard 3D U-Net model from the following link:
 [`Standard 3D U-Net Model`](https://drive.google.com/file/d/1I8kMquW6fq3SZ5s5gDLLkGXrrwSDgo0I/view?usp=sharing)
 
