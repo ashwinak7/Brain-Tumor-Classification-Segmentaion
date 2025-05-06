@@ -1,4 +1,4 @@
-# Dataset Information
+# Dataset Description
 
 ## 1. Kaggle Brain MRI Dataset
 
