@@ -50,10 +50,13 @@ We evaluated the models using various performance metrics such as:
 - Dice Similarity Coefficient
 - Precision & Recall
 - F1 Score
+- Support
+- Confusion Matrix
+- Mean IoU
 
 ## 🔍 Background
 
-MRI imaging is commonly used to diagnose brain tumors. Manual review of MRI scans is difficult due to overlapping tumor features. DL models like CNNs and Transformers have demonstrated high performance in classifying and segmenting brain anomalies, making them suitable for this task.
+MRI imaging is commonly used to diagnose brain tumors. Manual review of MRI scans is difficult due to overlapping tumor features. Deep Learning models like CNNs and Transformers have demonstrated high performance in classifying and segmenting brain anomalies, making them suitable for this task.
 
 ## 🤖 Role of Deep Learning
 
@@ -63,5 +66,11 @@ Deep Learning models are powerful in learning complex patterns directly from ima
 
 This project was inspired by a strong interest in AI and its potential in healthcare. It combines technical curiosity with a meaningful real-world impact by contributing toward the improvement of early detection and diagnosis of brain tumors.
 
-## 📁 Project Structure
+## 📜 License
+
+This project is licensed under the [MIT License](LICENSE).
+
+---
+
+> **Disclaimer:** This system is a research prototype and is not intended for clinical use.
 
