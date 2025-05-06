@@ -1,12 +1,12 @@
 # Visualization on Flask
 
-To create an interactive and user-friendly experience, a Flask-based web interface was developed to visualize outputs of both classification and segmentation models. Users can upload MRI images through the interface and view real-time output predictions, such as tumor type classification and segmented tumor regions. The integration of trained deep learning models with Flask ensures smooth deployment and allows end-users, such as medical professionals or researchers, to access results without requiring technical knowledge. This web application effectively bridges the gap between model development and practical usage, providing clear visual feedback for each prediction.
+  To create an interactive and user-friendly experience, a Flask-based web interface was developed to visualize outputs of both classification and segmentation models. Users can upload MRI images through the interface and view real-time output predictions, such as tumor type classification and segmented tumor regions. The integration of trained deep learning models with Flask ensures smooth deployment and allows end-users, such as medical professionals or researchers, to access results without requiring technical knowledge. This web application effectively bridges the gap between model development and practical usage, providing clear visual feedback for each prediction.
 
 ---
 
 ## 🖥️ Flask Interface Overview
 
-The Flask-based web interface provides an intuitive platform for real-time brain tumor detection. It supports multiple deep learning models, including **ResNet50** and **Hybrid Vision Transformer (ViT)** for tumor classification. Users can easily select a model, upload MRI scans, and receive instant predictions with high-confidence scores.
+  The Flask-based web interface provides an intuitive platform for real-time brain tumor detection. It supports multiple deep learning models, including **ResNet50** and **Hybrid Vision Transformer (ViT)** for tumor classification. Users can easily select a model, upload MRI scans, and receive instant predictions with high-confidence scores.
 
 - **Glioma Detection** (99.98% confidence using ResNet50)
 - **Meningioma Classification** (99.81% confidence via Hybrid ViT)
@@ -55,7 +55,7 @@ The Flask-based web interface demonstrates versatility in real-time brain tumor 
 ![Attention 3D U-Net Segmentation Visualization on Web Interface](https://github.com/user-attachments/assets/cb4e9030-6d2e-4f84-b9b1-169c51bb6528)
 
 
-The Flask-based web interface allows users to upload NIfTI-format MRI files (e.g., **BraTS20_Training_001_fair.nii**) and obtain real-time predictions. The interface displays both the **input MRI slices** and the corresponding **segmentation results**, highlighting tumor boundaries and regions.
+  The Flask-based web interface allows users to upload NIfTI-format MRI files (e.g., **BraTS20_Training_001_fair.nii**) and obtain real-time predictions. The interface displays both the **input MRI slices** and the corresponding **segmentation results**, highlighting tumor boundaries and regions.
 
 The integration of both **Standard 3D U-Net** and **Attention 3D U-Net** segmentation models offers clear and precise visualizations, making the interface a powerful tool for medical professionals to validate model outputs. The design emphasizes accessibility, ensuring that the interface is intuitive and does not require technical expertise.
 
@@ -63,4 +63,4 @@ The integration of both **Standard 3D U-Net** and **Attention 3D U-Net** segment
 
 ## ✅ Conclusion
 
-The Flask-based web interface for the Brain Tumor MRI Detection project provides an **interactive and user-friendly platform** for analyzing MRI scans. By integrating advanced deep learning models, it offers **real-time tumor classification** and **precise segmentation** results. This deployment bridges the gap between cutting-edge AI technologies and practical healthcare applications, enabling faster and more accurate tumor detection, which could play a crucial role in clinical decision-making and research.
+  The Flask-based web interface for the Brain Tumor MRI Detection project provides an **interactive and user-friendly platform** for analyzing MRI scans. By integrating advanced deep learning models, it offers **real-time tumor classification** and **precise segmentation** results. This deployment bridges the gap between cutting-edge AI technologies and practical healthcare applications, enabling faster and more accurate tumor detection, which could play a crucial role in clinical decision-making and research.
