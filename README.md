@@ -72,5 +72,5 @@ This project is licensed under the [MIT License](LICENSE).
 
 ---
 
-> **Disclaimer:** This system is a research prototype and is not intended for clinical use.
+> **Disclaimer:** This model is only for educational purpose and is not intended for clinical use.
 
