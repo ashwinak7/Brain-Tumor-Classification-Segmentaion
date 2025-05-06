@@ -23,11 +23,11 @@ This project is designed to:
   - `Hybrid Vision Transformer (ViT-CNN)`
 
 - **Segmentation Models**:  
-  - `3D U-Net`  
+  - `Standard 3D U-Net`  
   - `Attention 3D U-Net`
 
 - **Web Interface**:  
-  Built using Flask to allow users to upload MRI scans and view classification and segmentation results.
+  - Built using Flask to allow users to upload MRI scans and view classification and segmentation results.
 
 ## 🧾 Datasets
 
