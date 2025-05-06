@@ -29,14 +29,14 @@ By combining **advanced classification** and **segmentation** frameworks, the we
 
 ## 🖼️ Visualizations
 
-### ResNet50 Flask Prediction
+### ResNet50 Prediction Visualization on Web Interface
 
-![ResNet50 Flask Prediction](https://github.com/user-attachments/assets/809c8bc4-c33a-42a1-ba1a-d613abc2eccf)
+![ResNet50 Prediction Visualization on Web Interface](https://github.com/user-attachments/assets/809c8bc4-c33a-42a1-ba1a-d613abc2eccf)
 
 
-### Hybrid Vision Transformer Flask Prediction
+### Hybrid Vision Transformer Prediction on Web-Page
 
-![Hybrid ViT Flask Prediction](https://github.com/user-attachments/assets/ef2c60b4-dc28-4840-84c6-85d19cf8c26e)
+![Hybrid ViT Prediction Visualization on Web Interface](https://github.com/user-attachments/assets/ef2c60b4-dc28-4840-84c6-85d19cf8c26e)
 
 
 The Flask-based web interface demonstrates versatility in real-time brain tumor detection. Predictions are made using models like ResNet50 and Hybrid Vision Transformer (ViT) for classification. The interface provides high-confidence predictions (e.g., Glioma at 99.98% confidence) and also visualizes segmented tumor areas.
@@ -45,14 +45,14 @@ The Flask-based web interface demonstrates versatility in real-time brain tumor 
 
 ## 🧠 Segmentation Models on Flask
 
-### Standard 3D U-Net Segmentation
+### Standard 3D U-Net Segmentation Visualization on Web Interface
 
-![Standard 3D U-Net Flask Prediction](https://github.com/user-attachments/assets/8f2c4e1c-ba79-4ff3-96b7-f45a7cd9af89)
+![Standard 3D U-Net Segmentation Visualization on Web Interface](https://github.com/user-attachments/assets/8f2c4e1c-ba79-4ff3-96b7-f45a7cd9af89)
 
 
-### Attention 3D U-Net Segmentation
+### Attention 3D U-Net Segmentation Visualization on Web Interface
 
-![Attention 3D U-Net Flask Prediction](https://github.com/user-attachments/assets/cb4e9030-6d2e-4f84-b9b1-169c51bb6528)
+![Attention 3D U-Net Segmentation Visualization on Web Interface](https://github.com/user-attachments/assets/cb4e9030-6d2e-4f84-b9b1-169c51bb6528)
 
 
 The Flask-based web interface allows users to upload NIfTI-format MRI files (e.g., **BraTS20_Training_001_fair.nii**) and obtain real-time predictions. The interface displays both the **input MRI slices** and the corresponding **segmentation results**, highlighting tumor boundaries and regions.
