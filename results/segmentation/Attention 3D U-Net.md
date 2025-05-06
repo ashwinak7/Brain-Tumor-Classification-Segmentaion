@@ -40,12 +40,14 @@ These results demonstrate that the Attention 3D U-Net performs well in classifyi
 
 ## 📈 Training History
 
+![Attention 3D U-Net Model History](https://github.com/user-attachments/assets/f6f382b3-3dd5-4043-88ff-9e5c0516f003)
 
 
 ---
 
 ## 🧩 Segmentation Predictions
 
+![Attention 3D U-Net Model Prediction](https://github.com/user-attachments/assets/a462470a-682e-49a5-9922-705f1e770c8a)
 
 
 The prediction image from the Attention 3D U-Net model highlights its enhanced ability to focus on relevant tumor regions using attention gates. This model shows a **superior ability to delineate tumor boundaries**, especially in complex areas such as edema, enhancing tumors, and necrotic regions.
