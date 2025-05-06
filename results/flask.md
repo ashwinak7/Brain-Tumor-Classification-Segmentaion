@@ -34,7 +34,7 @@ By combining **advanced classification** and **segmentation** frameworks, the we
 ![ResNet50 Prediction Visualization on Web Interface](https://github.com/user-attachments/assets/809c8bc4-c33a-42a1-ba1a-d613abc2eccf)
 
 
-### Hybrid Vision Transformer Prediction on Web-Page
+### Hybrid Vision Transformer Visualization on Web Interface
 
 ![Hybrid ViT Prediction Visualization on Web Interface](https://github.com/user-attachments/assets/ef2c60b4-dc28-4840-84c6-85d19cf8c26e)
 
