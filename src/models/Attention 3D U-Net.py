@@ -1,4 +1,3 @@
-#These lines import various libraries for file handling, image processing, data manipulation, and visualization.
 import os
 import cv2
 import glob
@@ -13,17 +12,15 @@ from skimage.util import montage
 import skimage.transform as skTrans
 from skimage.transform import rotate
 from skimage.transform import resize
-from PIL import Image, ImageOps 
+from PIL import Image, ImageOps  
 
-#These libraries are specific to neuroimaging data processing and visualization.
 # neural imaging
 import nilearn as nl
-import nibabel as nib # Ensure nibabel is installed
+import nibabel as nib
 import nilearn.plotting as nlplt
 !pip install git+https://github.com/miykael/gif_your_nifti # nifti to gif 
 import gif_your_nifti.core as gif2nif
 
-#These libraries are used for building and training neural networks, as well as for data preprocessing and splitting.
 # ml libs
 import keras
 import keras.backend as K
@@ -37,101 +34,98 @@ from tensorflow.keras.models import *
 from tensorflow.keras.layers import *
 from tensorflow.keras.optimizers import *
 from tensorflow.keras.callbacks import ModelCheckpoint, ReduceLROnPlateau, EarlyStopping, TensorBoard
-from tensorflow.keras.layers import Rescaling, Normalization
-from tensorflow.keras.layers import RandomFlip, RandomRotation
-
+from tensorflow.keras.layers import Rescaling, Normalization  # Corrected import
 
 # Make numpy printouts easier to read.
 np.set_printoptions(precision=3, suppress=True)
-#These define the classes for segmentation and the number of slices to use from each MRI volume.
+
+!pip3 install -U segmentation-models
+%env SM_FRAMEWORK=tf.keras
+import segmentation_models as sm
+import tensorflow as tf
+tf.keras.backend.set_image_data_format('channels_last')
+
+#Code mới
+import sys
+import os
+import glob
+import random
+import time
+
+import numpy as np
+import pandas as pd
+
+import cv2
+import matplotlib.pyplot as plt
+from mpl_toolkits.axes_grid1 import ImageGrid
+from sklearn.model_selection import train_test_split
+from segmentation_models import Unet, Linknet, PSPNet, FPN
+import keras
+from segmentation_models.utils import set_trainable
+from torch.utils.data import Dataset
+from keras.models import load_model
+from tensorflow.keras import utils as np_utils
 # DEFINE seg-areas  
 SEGMENT_CLASSES = {
-    0 : 'NOT tumor',
-    1 : 'NECROTIC/CORE', # or NON-ENHANCING tumor CORE
-    2 : 'EDEMA',
-    3 : 'ENHANCING' # original 4 -> converted into 3 later
+    0 : 'Not Tumor',
+    1 : 'Necrotic/ Core', # or NON-ENHANCING tumor CORE
+    2 : 'Edema',
+    3 : 'Enhancing' # original 4 -> converted into 3 later
 }
 
 # there are 155 slices per volume
 # to start at 5 and use 145 slices means we will skip the first 5 and last 5 
-VOLUME_SLICES = 100 
+VOLUME_SLICES = 100
 VOLUME_START_AT = 22 # first slice of volume that we will include
-#This function loads a NIfTI image file and returns its data as a numpy array.
-# Define dataset paths
-TRAIN_DATASET_PATH = '/kaggle/input/brats20-dataset-training-validation/BraTS2020_TrainingData/MICCAI_BraTS2020_TrainingData/'
-VALIDATION_DATASET_PATH = '/kaggle/input/brats20-dataset-training-validation/BraTS2020_ValidationData/MICCAI_BraTS2020_ValidationData/'
+TRAIN_DATASET_PATH = '../input/brats20-dataset-training-validation/BraTS2020_TrainingData/MICCAI_BraTS2020_TrainingData/'
+VALIDATION_DATASET_PATH =  '../input/brats20-dataset-training-validation/BraTS2020_ValidationData/MICCAI_BraTS2020_ValidationData'
 
-# Define a function to load the NIfTI images safely
-def load_nifti_image(image_path):
-    if os.path.exists(image_path):
-        return nib.load(image_path).get_fdata()
-    else:
-        print(f"File not found: {image_path}")
-        return None
+test_image_flair=nib.load(TRAIN_DATASET_PATH + 'BraTS20_Training_002/BraTS20_Training_002_flair.nii').get_fdata()
+test_image_t1=nib.load(TRAIN_DATASET_PATH + 'BraTS20_Training_002/BraTS20_Training_002_t1.nii').get_fdata()
+test_image_t1ce=nib.load(TRAIN_DATASET_PATH + 'BraTS20_Training_002/BraTS20_Training_002_t1ce.nii').get_fdata()
+test_image_t2=nib.load(TRAIN_DATASET_PATH + 'BraTS20_Training_002/BraTS20_Training_002_t2.nii').get_fdata()
+test_mask=nib.load(TRAIN_DATASET_PATH + 'BraTS20_Training_002/BraTS20_Training_002_seg.nii').get_fdata()
 
-# Specify the patient ID you want to load
-patient_id = "BraTS20_Training_001"
 
-# Construct full paths using os.path.join
-flair_path = os.path.join(TRAIN_DATASET_PATH, patient_id, f"{patient_id}_flair.nii")
-t1_path = os.path.join(TRAIN_DATASET_PATH, patient_id, f"{patient_id}_t1.nii")
-t1ce_path = os.path.join(TRAIN_DATASET_PATH, patient_id, f"{patient_id}_t1ce.nii")
-t2_path = os.path.join(TRAIN_DATASET_PATH, patient_id, f"{patient_id}_t2.nii")
-mask_path = os.path.join(TRAIN_DATASET_PATH, patient_id, f"{patient_id}_seg.nii")
-
-# Load images safely
-test_image_flair = load_nifti_image(flair_path)
-test_image_t1 = load_nifti_image(t1_path)
-test_image_t1ce = load_nifti_image(t1ce_path)
-test_image_t2 = load_nifti_image(t2_path)
-test_mask = load_nifti_image(mask_path)
-
-# Check if images loaded successfully
-if all(img is not None for img in [test_image_flair, test_image_t1, test_image_t1ce, test_image_t2, test_mask]):
-    print("All images loaded successfully!")
-else:
-    print("Some images could not be loaded. Check file paths.")
 fig, (ax1, ax2, ax3, ax4, ax5) = plt.subplots(1,5, figsize = (20, 10))
 slice_w = 25
 ax1.imshow(test_image_flair[:,:,test_image_flair.shape[0]//2-slice_w], cmap = 'gray')
-ax1.set_title('Image flair')
+ax1.set_title('Image TFlair')
 ax2.imshow(test_image_t1[:,:,test_image_t1.shape[0]//2-slice_w], cmap = 'gray')
-ax2.set_title('Image t1')
+ax2.set_title('Image T1')
 ax3.imshow(test_image_t1ce[:,:,test_image_t1ce.shape[0]//2-slice_w], cmap = 'gray')
-ax3.set_title('Image t1ce')
+ax3.set_title('Image T1CE')
 ax4.imshow(test_image_t2[:,:,test_image_t2.shape[0]//2-slice_w], cmap = 'gray')
-ax4.set_title('Image t2')
+ax4.set_title('Image T2')
 ax5.imshow(test_mask[:,:,test_mask.shape[0]//2-slice_w])
 ax5.set_title('Mask')
-# Skip 50:-50 slices since there is not much to see
-fig, ax1 = plt.subplots(1, 1, figsize = (15,15))
-ax1.imshow(rotate(montage(test_image_t1[50:-50,:,:]), 90, resize=True), cmap ='gray')
 
 # Skip 50:-50 slices since there is not much to see
 fig, ax1 = plt.subplots(1, 1, figsize = (15,15))
+ax1.imshow(rotate(montage(test_image_t1[50:-50,:,:]), 90, resize=True), cmap ='gray')
+# Skip 50:-50 slices since there is not much to see
+fig, ax1 = plt.subplots(1, 1, figsize = (15,15))
 ax1.imshow(rotate(montage(test_mask[60:-60,:,:]), 90, resize=True), cmap ='gray')
-shutil.copy2(TRAIN_DATASET_PATH + 'BraTS20_Training_001/BraTS20_Training_001_flair.nii', './test_gif_BraTS20_Training_001_flair.nii')
-gif2nif.write_gif_normal('./test_gif_BraTS20_Training_001_flair.nii')
-niimg = nl.image.load_img(TRAIN_DATASET_PATH + 'BraTS20_Training_001/BraTS20_Training_001_flair.nii')
-nimask = nl.image.load_img(TRAIN_DATASET_PATH + 'BraTS20_Training_001/BraTS20_Training_001_seg.nii')
+niimg = nl.image.load_img(TRAIN_DATASET_PATH + 'BraTS20_Training_013/BraTS20_Training_013_flair.nii')
+nimask = nl.image.load_img(TRAIN_DATASET_PATH + 'BraTS20_Training_013/BraTS20_Training_013_seg.nii')
 
 fig, axes = plt.subplots(nrows=4, figsize=(30, 40))
 
 
 nlplt.plot_anat(niimg,
-                title='BraTS20_Training_001_flair.nii plot_anat',
+                title='BraTS20_Training_013_flair.nii plot_anat',
                 axes=axes[0])
 
 nlplt.plot_epi(niimg,
-               title='BraTS20_Training_001_flair.nii plot_epi',
+               title='BraTS20_Training_013_flair.nii plot_epi',
                axes=axes[1])
 
 nlplt.plot_img(niimg,
-               title='BraTS20_Training_001_flair.nii plot_img',
+               title='BraTS20_Training_013_flair.nii plot_img',
                axes=axes[2])
 
 nlplt.plot_roi(nimask, 
-               title='BraTS20_Training_001_flair.nii with mask plot_roi',
+               title='BraTS20_Training_013_flair.nii with mask plot_roi',
                bg_img=niimg, 
                axes=axes[3], cmap='Paired')
 
@@ -191,96 +185,7 @@ def specificity(y_true, y_pred):
     true_negatives = K.sum(K.round(K.clip((1-y_true) * (1-y_pred), 0, 1)))
     possible_negatives = K.sum(K.round(K.clip(1-y_true, 0, 1)))
     return true_negatives / (possible_negatives + K.epsilon())
-IMG_SIZE=128
-def attention_block(x, gating, inter_channels):
-    """
-    x: Encoder features (skip connection)
-    gating: Gating signal from decoder
-    inter_channels: Intermediate channels for attention
-    """
-    theta_x = Conv3D(inter_channels, (1, 1, 1), padding='same')(x)
-    phi_g = Conv3D(inter_channels, (1, 1, 1), padding='same')(gating)
-    add_xg = Add()([theta_x, phi_g])
-    act_xg = Activation('relu')(add_xg)
-    psi = Conv3D(1, (1, 1, 1), padding='same', activation='sigmoid')(act_xg)
-    attended_x = Multiply()([x, psi])
-    return attended_x
-def build_attention_unet(inputs, ker_init, dropout):
-    # Encoder
-    conv1 = Conv3D(32, (3, 3, 3), activation='relu', padding='same', kernel_initializer=ker_init)(inputs)
-    conv1 = Conv3D(32, (3, 3, 3), activation='relu', padding='same', kernel_initializer=ker_init)(conv1)
-    
-    pool = MaxPooling3D(pool_size=(2, 2, 2))(conv1)
-    conv = Conv3D(64, (3, 3, 3), activation='relu', padding='same', kernel_initializer=ker_init)(pool)
-    conv = Conv3D(64, (3, 3, 3), activation='relu', padding='same', kernel_initializer=ker_init)(conv)
-    
-    pool1 = MaxPooling3D(pool_size=(2, 2, 2))(conv)
-    conv2 = Conv3D(128, (3, 3, 3), activation='relu', padding='same', kernel_initializer=ker_init)(pool1)
-    conv2 = Conv3D(128, (3, 3, 3), activation='relu', padding='same', kernel_initializer=ker_init)(conv2)
-    
-    pool2 = MaxPooling3D(pool_size=(2, 2, 2))(conv2)
-    conv3 = Conv3D(256, (3, 3, 3), activation='relu', padding='same', kernel_initializer=ker_init)(pool2)
-    conv3 = Conv3D(256, (3, 3, 3), activation='relu', padding='same', kernel_initializer=ker_init)(conv3)
-    
-    pool4 = MaxPooling3D(pool_size=(2, 2, 2))(conv3)
-    conv5 = Conv3D(512, (3, 3, 3), activation='relu', padding='same', kernel_initializer=ker_init)(pool4)
-    conv5 = Conv3D(512, (3, 3, 3), activation='relu', padding='same', kernel_initializer=ker_init)(conv5)
-    drop5 = Dropout(dropout)(conv5)
-    
-    # Decoder with Attention Gates
-    up7 = Conv3D(256, (2, 2, 2), activation='relu', padding='same', kernel_initializer=ker_init)(UpSampling3D(size=(2, 2, 2))(drop5))
-    att7 = attention_block(conv3, up7, inter_channels=128)
-    merge7 = concatenate([att7, up7])
-    conv7 = Conv3D(256, (3, 3, 3), activation='relu', padding='same', kernel_initializer=ker_init)(merge7)
-    conv7 = Conv3D(256, (3, 3, 3), activation='relu', padding='same', kernel_initializer=ker_init)(conv7)
-    
-    up8 = Conv3D(128, (2, 2, 2), activation='relu', padding='same', kernel_initializer=ker_init)(UpSampling3D(size=(2, 2, 2))(conv7))
-    att8 = attention_block(conv2, up8, inter_channels=64)
-    merge8 = concatenate([att8, up8])
-    conv8 = Conv3D(128, (3, 3, 3), activation='relu', padding='same', kernel_initializer=ker_init)(merge8)
-    conv8 = Conv3D(128, (3, 3, 3), activation='relu', padding='same', kernel_initializer=ker_init)(conv8)
-    
-    up9 = Conv3D(64, (2, 2, 2), activation='relu', padding='same', kernel_initializer=ker_init)(UpSampling3D(size=(2, 2, 2))(conv8))
-    att9 = attention_block(conv, up9, inter_channels=32)
-    merge9 = concatenate([att9, up9])
-    conv9 = Conv3D(64, (3, 3, 3), activation='relu', padding='same', kernel_initializer=ker_init)(merge9)
-    conv9 = Conv3D(64, (3, 3, 3), activation='relu', padding='same', kernel_initializer=ker_init)(conv9)
-    
-    up = Conv3D(32, (2, 2, 2), activation='relu', padding='same', kernel_initializer=ker_init)(UpSampling3D(size=(2, 2, 2))(conv9))
-    att = attention_block(conv1, up, inter_channels=16)
-    merge = concatenate([att, up])
-    conv = Conv3D(32, (3, 3, 3), activation='relu', padding='same', kernel_initializer=ker_init)(merge)
-    conv = Conv3D(32, (3, 3, 3), activation='relu', padding='same', kernel_initializer=ker_init)(conv)
-    
-    conv10 = Conv3D(4, (1, 1, 1), activation='softmax')(conv)
-    
-    return Model(inputs=inputs, outputs=conv10)
-    
-input_layer = Input((IMG_SIZE, IMG_SIZE, IMG_SIZE, 3))
-model = build_attention_unet(input_layer, 'he_normal', 0.2)
-
-model.compile(
-    loss="categorical_crossentropy",
-    optimizer=tf.keras.optimizers.Adam(learning_rate=0.0001),
-    metrics=[
-        'accuracy',
-        tf.keras.metrics.MeanIoU(num_classes=4),
-        dice_coef,
-        precision,
-        sensitivity,
-        specificity,
-        dice_coef_necrotic,
-        dice_coef_edema,
-        dice_coef_enhancing
-    ]
-)
-plot_model(model, 
-           show_shapes = True,
-           show_dtype=False,
-           show_layer_names = True, 
-           rankdir = 'TB', 
-           expand_nested = False, 
-           dpi = 70)
+# **Load data**
 # lists of directories with studies
 train_and_val_directories = [f.path for f in os.scandir(TRAIN_DATASET_PATH) if f.is_dir()]
 
@@ -298,8 +203,8 @@ train_and_test_ids = pathListIntoIds(train_and_val_directories);
 
     
 train_test_ids, val_ids = train_test_split(train_and_test_ids,test_size=0.2) 
-train_ids, test_ids = train_test_split(train_test_ids,test_size=0.15)
-#This class generates batches of data for training the model, handling the loading and preprocessing of MRI volumes.
+train_ids, test_ids = train_test_split(train_test_ids,test_size=0.15) 
+IMG_SIZE = 128
 class DataGenerator(keras.utils.Sequence):
     'Generates data for Keras'
     def __init__(self, list_IDs, dim=(IMG_SIZE,IMG_SIZE), batch_size = 1, n_channels = 2, shuffle=True):
@@ -354,6 +259,8 @@ class DataGenerator(keras.utils.Sequence):
             
             data_path = os.path.join(case_path, f'{i}_seg.nii');
             seg = nib.load(data_path).get_fdata()
+  
+
         
             for j in range(VOLUME_SLICES):
                  X[j +VOLUME_SLICES*c,:,:,0] = cv2.resize(flair[:,:,j+VOLUME_START_AT], (IMG_SIZE, IMG_SIZE));
@@ -382,6 +289,107 @@ def showDataLayout():
     plt.show()
     
 showDataLayout()
+callbacks = [
+     keras.callbacks.EarlyStopping(monitor='loss', min_delta=0,
+                              patience=2, verbose=1, mode='auto'),
+      keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.2,
+                              patience=2, min_lr=0.000001, verbose=1)]
+from tensorflow.keras.layers import Input, Conv2D, MaxPooling2D, UpSampling2D, Concatenate, BatchNormalization, Activation
+from tensorflow.keras.models import Model
+
+def attention_gate(input_1, input_2, filters):
+    g1 = Conv2D(filters, 1, strides=1, padding='same')(input_1)
+    x1 = Conv2D(filters, 1, strides=1, padding='same')(input_2)
+    x1 = BatchNormalization()(x1)
+    x1 = Activation('relu')(x1)
+    x1 = Concatenate(axis=-1)([g1, x1])
+    x1 = Conv2D(1, 1, activation='sigmoid', padding='same')(x1)
+    return x1
+
+def conv_block(input_tensor, filters, kernel_size=3):
+    x = Conv2D(filters, kernel_size, padding='same')(input_tensor)
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
+    x = Conv2D(filters, kernel_size, padding='same')(x)
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
+    return x
+
+def UNet_Attention(input_shape, num_classes=4):
+    inputs = Input(shape=input_shape)
+
+    # Encoder
+    conv1 = conv_block(inputs, 64)
+    pool1 = MaxPooling2D(pool_size=(2, 2))(conv1)
+    
+    conv2 = conv_block(pool1, 128)
+    pool2 = MaxPooling2D(pool_size=(2, 2))(conv2)
+    
+    conv3 = conv_block(pool2, 256)
+    pool3 = MaxPooling2D(pool_size=(2, 2))(conv3)
+    
+    conv4 = conv_block(pool3, 512)
+    pool4 = MaxPooling2D(pool_size=(2, 2))(conv4)
+
+    # Center
+    center = conv_block(pool4, 1024)
+
+    # Decoder
+    up4 = UpSampling2D(size=(2, 2))(center)
+    up4 = Conv2D(512, 2, activation='relu', padding='same')(up4)
+    att4 = attention_gate(conv4, up4, 512)
+    merge4 = Concatenate()([conv4, att4])
+    up_conv4 = conv_block(merge4, 512)
+
+    up3 = UpSampling2D(size=(2, 2))(up_conv4)
+    up3 = Conv2D(256, 2, activation='relu', padding='same')(up3)
+    att3 = attention_gate(conv3, up3, 256)
+    merge3 = Concatenate()([conv3, att3])
+    up_conv3 = conv_block(merge3, 256)
+
+    up2 = UpSampling2D(size=(2, 2))(up_conv3)
+    up2 = Conv2D(128, 2, activation='relu', padding='same')(up2)
+    att2 = attention_gate(conv2, up2, 128)
+    merge2 = Concatenate()([conv2, att2])
+    up_conv2 = conv_block(merge2, 128)
+
+    up1 = UpSampling2D(size=(2, 2))(up_conv2)
+    up1 = Conv2D(64, 2, activation='relu', padding='same')(up1)
+    att1 = attention_gate(conv1, up1, 64)
+    merge1 = Concatenate()([conv1, att1])
+    up_conv1 = conv_block(merge1, 64)
+
+    # Output
+    outputs = Conv2D(num_classes, 1, activation='softmax')(up_conv1)
+
+    model = Model(inputs=[inputs], outputs=[outputs])
+    return model
+
+# Define input shape (128x128x2 for example)
+input_shape = (128, 128, 2)
+
+# Create the model
+model = UNet_Attention(input_shape)
+
+# Compile the model
+model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+
+# Print model summary
+model.summary()
+import tensorflow.keras.backend as K
+
+# Clear previous session
+K.clear_session()
+
+# Train the Attention UNet model
+history = model.fit(training_generator,
+                    epochs=3,
+                    steps_per_epoch=len(train_ids),
+                    callbacks=callbacks,
+                    validation_data=valid_generator)
+
+# Save the trained model
+model.save("attention_unet_model.h5")
 csv_logger = CSVLogger('training.log', separator=',', append=False)
 
 
@@ -394,16 +402,6 @@ callbacks = [
 #                             verbose=1, save_best_only=True, save_weights_only = True)
         csv_logger
     ]
-K.clear_session()
-
-# history =  model.fit(training_generator,
-#                     epochs=35,
-#                     steps_per_epoch=len(train_ids),
-#                     callbacks= callbacks,
-#                     validation_data = valid_generator
-#                     )  
-# model.save("model_x1_1.h5")
-############ load trained model ################
 model = keras.models.load_model('../input/modelperclasseval/model_per_class.h5', 
                                    custom_objects={ 'accuracy' : tf.keras.metrics.MeanIoU(num_classes=4),
                                                    "dice_coef": dice_coef,
@@ -418,11 +416,6 @@ model = keras.models.load_model('../input/modelperclasseval/model_per_class.h5',
 history = pd.read_csv('../input/modelperclasseval/training_per_class.log', sep=',', engine='python')
 
 hist=history
-
-############### ########## ####### #######
-
-# hist=history.history
-
 acc=hist['accuracy']
 val_acc=hist['val_accuracy']
 
@@ -453,6 +446,14 @@ ax[3].plot(epoch,hist['val_mean_io_u'],'r',label='Validation mean IOU')
 ax[3].legend()
 
 plt.show()
+plot_model(model, 
+           show_shapes = True,
+           show_dtype=False,
+           show_layer_names = True, 
+           rankdir = 'TB', 
+           expand_nested = False, 
+           dpi = 70)
+# Prediction examples 
 # mri type must one of 1) flair 2) t1 3) t1ce 4) t2 ------- or even 5) seg
 # returns volume of specified study at `path`
 def imageLoader(path):
@@ -550,114 +551,9 @@ showPredictsById(case=test_ids[4][-3:])
 showPredictsById(case=test_ids[5][-3:])
 showPredictsById(case=test_ids[6][-3:])
 
-
-# mask = np.zeros((10,10))
-# mask[3:-3, 3:-3] = 1 # white square in black background
-# im = mask + np.random.randn(10,10) * 0.01 # random image
-# masked = np.ma.masked_where(mask == 0, mask)
-
-# plt.figure()
-# plt.subplot(1,2,1)
-# plt.imshow(im, 'gray', interpolation='none')
-# plt.subplot(1,2,2)
-# plt.imshow(im, 'gray', interpolation='none')
-# plt.imshow(masked, 'jet', interpolation='none', alpha=0.7)
-# plt.show()
-case = case=test_ids[3][-3:]
-path = f"../input/brats20-dataset-training-validation/BraTS2020_TrainingData/MICCAI_BraTS2020_TrainingData/BraTS20_Training_{case}"
-gt = nib.load(os.path.join(path, f'BraTS20_Training_{case}_seg.nii')).get_fdata()
-p = predictByPath(path,case)
-
-
-core = p[:,:,:,1]
-edema= p[:,:,:,2]
-enhancing = p[:,:,:,3]
-
-
-i=40 # slice at
-eval_class = 2 #     0 : 'NOT tumor',  1 : 'ENHANCING',    2 : 'CORE',    3 : 'WHOLE'
-
-
-
-gt[gt != eval_class] = 1 # use only one class for per class evaluation 
-
-resized_gt = cv2.resize(gt[:,:,i+VOLUME_START_AT], (IMG_SIZE, IMG_SIZE))
-
-plt.figure()
-f, axarr = plt.subplots(1,2) 
-axarr[0].imshow(resized_gt, cmap="gray")
-axarr[0].title.set_text('ground truth')
-axarr[1].imshow(p[i,:,:,eval_class], cmap="gray")
-axarr[1].title.set_text(f'predicted class: {SEGMENT_CLASSES[eval_class]}')
-plt.show()
-import tensorflow.keras.backend as K  # Ensure this import is present
-import tensorflow as tf
-
-# Dice loss as defined above for 4 classes
-def dice_coef(y_true, y_pred, smooth=1.0):
-    class_num = 4
-    total_loss = 0  # Initialize total loss
-
-    for i in range(class_num):
-        y_true_f = tf.reshape(y_true[:, :, :, i], [-1])  # Fix: Using tf.reshape
-        y_pred_f = tf.reshape(y_pred[:, :, :, i], [-1])  
-        intersection = K.sum(y_true_f * y_pred_f)
-        loss = (2. * intersection + smooth) / (K.sum(y_true_f) + K.sum(y_pred_f) + smooth)
-        
-        total_loss += loss
-
-    total_loss /= class_num  # Average over classes
-    return total_loss
-
-# Define per-class evaluation of Dice coefficient
-def dice_coef_necrotic(y_true, y_pred, epsilon=1e-6):
-    intersection = K.sum(K.abs(y_true[:, :, :, 1] * y_pred[:, :, :, 1]))
-    return (2. * intersection) / (K.sum(y_true[:, :, :, 1]) + K.sum(y_pred[:, :, :, 1]) + epsilon)
-
-def dice_coef_edema(y_true, y_pred, epsilon=1e-6):
-    intersection = K.sum(K.abs(y_true[:, :, :, 2] * y_pred[:, :, :, 2]))
-    return (2. * intersection) / (K.sum(y_true[:, :, :, 2]) + K.sum(y_pred[:, :, :, 2]) + epsilon)
-
-def dice_coef_enhancing(y_true, y_pred, epsilon=1e-6):
-    intersection = K.sum(K.abs(y_true[:, :, :, 3] * y_pred[:, :, :, 3]))
-    return (2. * intersection) / (K.sum(y_true[:, :, :, 3]) + K.sum(y_pred[:, :, :, 3]) + epsilon)
-
-# Computing Precision 
-def precision(y_true, y_pred):
-    true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
-    predicted_positives = K.sum(K.round(K.clip(y_pred, 0, 1)))
-    return true_positives / (predicted_positives + K.epsilon())
-
-# Computing Sensitivity      
-def sensitivity(y_true, y_pred):
-    true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
-    possible_positives = K.sum(K.round(K.clip(y_true, 0, 1)))
-    return true_positives / (possible_positives + K.epsilon())
-
-# Computing Specificity
-def specificity(y_true, y_pred):
-    true_negatives = K.sum(K.round(K.clip((1 - y_true) * (1 - y_pred), 0, 1)))
-    possible_negatives = K.sum(K.round(K.clip(1 - y_true, 0, 1)))
-    return true_negatives / (possible_negatives + K.epsilon())
-
-# Compile the model
-model.compile(
-    loss="categorical_crossentropy",
-    optimizer=tf.keras.optimizers.Adam(learning_rate=0.0001),
-    metrics=[
-        'accuracy',
-        tf.keras.metrics.MeanIoU(num_classes=4),
-        dice_coef,
-        precision,
-        sensitivity,
-        specificity,
-        dice_coef_necrotic,
-        dice_coef_edema,
-        dice_coef_enhancing
-    ]
-)
-
-# Evaluate the model on the test dataset
+model.compile(loss="categorical_crossentropy", optimizer=keras.optimizers.Adam(learning_rate=0.001), metrics = [tf.keras.metrics.MeanIoU(num_classes=4), dice_coef, precision, sensitivity, specificity, dice_coef_necrotic, dice_coef_edema, dice_coef_enhancing] )
+# Evaluate the model on the test data using `evaluate`
 print("Evaluate on test data")
-results = model.evaluate(test_generator, batch_size=16)  # Removed `callbacks`
-print("Test loss, test accuracy:", results)
+#This line evaluates the model's performance on the test dataset.
+results = model.evaluate(test_generator, batch_size=16, callbacks= callbacks)
+print("test loss, test acc:", results)
